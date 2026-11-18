@@ -1,0 +1,34 @@
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --text: #1d2330; --muted: #5d6677; --line: #e3e6ec;
+  --ok: #1f7a4d; --warn: #a15c00; --bad: #b42318; --accent: #2f5bd3;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); background: var(--bg);
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #12151b; --panel: #1b1f27; --text: #e6e9ef; --muted: #9aa3b2; --line: #2b313c;
+          --ok: #4cc38a; --warn: #f0b04a; --bad: #f2786d; --accent: #7aa2ff; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); }
+main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 40px; }
+h1 { font-size: 1.35rem; margin: 0; }
+h2 { font-size: 0.95rem; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-top: 14px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.fila { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; font-size: .92rem; }
+.fila span:first-child { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+.chip { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: .8rem; font-weight: 600; border: 1px solid currentColor; }
+.ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; }
+button.primario { background: var(--accent); color: #fff; border-color: var(--accent); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+input { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--text); min-width: 0; flex: 1; }
+.barra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.tabla { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.tabla th, .tabla td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tabla-wrap { overflow-x: auto; }
+.aviso { margin-top: 10px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-size: .9rem; }
+.just { font-size: .9rem; margin: 6px 0 0; }
+.ancho2 { grid-column: span 2; min-width: 0; }
+@media (max-width: 700px) { .ancho2 { grid-column: auto; } }

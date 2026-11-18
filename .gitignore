@@ -1,0 +1,21 @@
+# Secretos y datos locales
+.env
+data/
+*.sqlite
+*.sqlite-journal
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Node / Vite
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# Sistema
+.DS_Store
+Thumbs.db
