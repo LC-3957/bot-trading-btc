@@ -1,6 +1,6 @@
 # Bot de trading BTC/USDT con LLM local
 
-![versión](https://img.shields.io/badge/versión-0.2.0-blue) ![modo](https://img.shields.io/badge/modo-Paper-orange) ![licencia](https://img.shields.io/badge/licencia-MIT-green)
+![versión](https://img.shields.io/badge/versión-0.3.0-blue) ![modo](https://img.shields.io/badge/modo-Paper-orange) ![licencia](https://img.shields.io/badge/licencia-MIT-green)
 <!-- Cuando subas el repo, cambia TU_USUARIO/TU_REPO para ver el estado de las pruebas: -->
 <!-- ![CI](https://github.com/TU_USUARIO/TU_REPO/actions/workflows/ci.yml/badge.svg) -->
 
@@ -14,7 +14,19 @@ Proyecto final de la práctica de Deep Learning para Finanzas (Prof. Rubén Migu
 
 ## Versión
 
-**v0.2.0** (17 de noviembre de 2026). Ver [CHANGELOG.md](CHANGELOG.md).
+**v0.3.0** (24 de noviembre de 2026). Ver [CHANGELOG.md](CHANGELOG.md).
+
+## Ejecución rápida (Windows)
+
+Guía completa paso a paso, con solución de problemas: [docs/GUIA_EJECUCION.md](docs/GUIA_EJECUCION.md).
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\windows\1_instalar.ps1    # una vez: dependencias, .env y modelo de Ollama
+powershell -ExecutionPolicy Bypass -File scripts\windows\2_iniciar.ps1     # enciende Ollama, backend y panel
+powershell -ExecutionPolicy Bypass -File scripts\windows\3_evidencia.ps1   # pruebas, LLM local, validación, errores, replay e informe
+```
+
+En Mac o Linux, usa los equivalentes de `scripts/mac-linux/` con `bash`.
 
 ## Tecnologías aplicadas
 
@@ -22,11 +34,11 @@ Proyecto final de la práctica de Deep Learning para Finanzas (Prof. Rubén Migu
 |---|---|---|
 | Interfaz | Vue 3 + TypeScript | Vue 3.5, TypeScript 5.9 |
 | Herramienta de compilación | Vite | 7.3 |
-| Backend / API | Python + FastAPI + Uvicorn | Python 3.11+, FastAPI 0.115, Uvicorn 0.34 |
-| Validación de datos | Pydantic | 2.11 |
+| Backend / API | Python + FastAPI + Uvicorn | Python 3.11 a 3.14, FastAPI 0.121, Uvicorn 0.38 |
+| Validación de datos | Pydantic | 2.12 |
 | Cliente HTTP | HTTPX | 0.28 |
 | LLM local | Ollama + Qwen2.5 7B (configurable) | Ollama 0.x |
-| Modelo de pronóstico | MLP (PyTorch en Colab, inferencia con NumPy) | NumPy 1.26+ |
+| Modelo de pronóstico | MLP (PyTorch en Colab, inferencia con NumPy) | NumPy 2.3+ |
 | Base de datos | SQLite | incluida en Python |
 | Datos de mercado | API pública spot v3 de MEXC | — |
 | Pruebas | pytest | 8.3 |
@@ -56,6 +68,21 @@ flowchart LR
 6. Se aplican los controles de riesgo. El LLM no puede modificarlos.
 7. Se ejecuta en Paper al precio de apertura de la vela siguiente, con deslizamiento.
 8. Se guarda todo en SQLite con su origen (`vivo` o `replay`) y se muestra en la interfaz.
+
+## Conexión con la cuenta de MEXC (v0.3)
+
+El bot se conecta a tu cuenta **spot** de MEXC con tu API key:
+- **Lee tu saldo y permisos** (`GET /api/v3/account`) y los muestra en el panel.
+- **Cada compra o venta del bot se manda a `POST /api/v3/order/test`.** MEXC "crea y valida una orden nueva, pero no la manda al motor de ejecución" ([documentación Spot V3](https://mexcdevelop.github.io/apidocs/spot_v3_en/)). La orden pasa por las reglas reales del exchange (firma, permisos, símbolo, tamaño), pero no se mueve dinero. El resultado (aceptada o rechazada, con el motivo de MEXC) queda en la orden.
+- **La posición y el patrimonio se llevan en el simulador Paper**, porque las órdenes de prueba no cambian saldos.
+
+**Por qué spot y no futuros:** la demo de futuros de MEXC es solo una función del navegador y no tiene API. MEXC indica que su API se conecta al entorno real y no ofrece sandbox. La validación de órdenes de spot es la forma oficial de probar con la cuenta sin operar dinero real.
+
+**Seguridad:**
+- `MEXC_API_KEY` y `MEXC_API_SECRET` viven solo en `.env`.
+- Nunca llegan al LLM, al navegador (el panel muestra la clave enmascarada) ni a la base de datos.
+- El código no tiene ninguna llamada a `/api/v3/order` (orden real), y una prueba automática lo verifica.
+- Crea la key **sin permiso de retiros**.
 
 ## Novedades de la v0.2
 
@@ -99,6 +126,13 @@ El MLP se entrenó con BTC-USD de Yahoo Finance. Este comando mide su error con 
 cd backend && python -m app.validar        # genera docs/validacion_mexc.md
 ```
 
+### Evidencia automática (v0.2.1)
+
+- `python -m app.diagnostico` → `docs/entorno_llm.md`. Registra hardware, versión de Ollama, modelo y tiempo de respuesta de una propuesta de prueba: demuestra que el LLM es local.
+- `python -m app.provocar todos` → `docs/errores/`. Provoca los 9 errores del protocolo contra MEXC y Ollama reales; cada uno usa una base de datos temporal propia.
+- `python -m app.informe` → `docs/informe.md`. Arma el informe con las cifras reales de la base de datos y de la evidencia.
+- `python -m app.evidencia` corre todo lo anterior, además de las pruebas, la validación y el replay, en un solo paso.
+
 ### Integración continua
 
 En cada `push`, GitHub Actions corre las pruebas del backend y compila la interfaz: [.github/workflows/ci.yml](.github/workflows/ci.yml).
@@ -107,7 +141,7 @@ En cada `push`, GitHub Actions corre las pruebas del backend y compila la interf
 
 - **No se pasa ninguna API a la IA.** El prompt se arma solo con datos de mercado, el pronóstico y el estado de la cartera, a partir de una lista cerrada de campos. Claves, rutas y variables de entorno nunca llegan al LLM, y una prueba automática lo verifica.
 - **Solo LLM local.** El backend no arranca si `OLLAMA_URL` no apunta a `localhost` o `127.0.0.1`.
-- **Sin claves de MEXC.** Solo se usan endpoints públicos, y no existe código que firme peticiones ni envíe órdenes. `MODO` distinto de `PAPER` detiene el arranque.
+- **Sin órdenes reales.** Con claves de MEXC solo se leen saldos y se validan órdenes en `/api/v3/order/test`. `MODO` distinto de `PAPER` detiene el arranque.
 - **Secretos fuera del repositorio.** `BOT_API_KEY` vive solo en `.env`, que está en `.gitignore`. La interfaz pide la clave al entrar y la guarda únicamente en la pestaña abierta.
 - **API protegida.** Todas las rutas, salvo `/api/salud`, exigen el encabezado `X-API-Key`. El backend escucha solo en `127.0.0.1`.
 
@@ -187,7 +221,7 @@ cd backend
 python -m pytest -q
 ```
 
-Son 32 pruebas. Entre ellas están los 9 errores provocados que pide el protocolo:
+Son 47 pruebas. Entre ellas están los 9 errores provocados que pide el protocolo:
 - API de MEXC sin respuesta o con límite de solicitudes
 - Dato atrasado
 - Ollama detenido
@@ -198,7 +232,9 @@ Son 32 pruebas. Entre ellas están los 9 errores provocados que pide el protocol
 - Reinicio del backend sin duplicar operaciones
 - Botón de detener
 
-También cubren la comparación calculada a mano, la separación entre replay y vivo, las métricas, la exportación y la validación.
+También cubren la comparación calculada a mano, la separación entre replay y vivo, las métricas, la exportación, la validación, el diagnóstico, el informe y los 9 escenarios de `app.provocar`.
+
+Para provocar los errores contra MEXC y Ollama reales y guardar la evidencia: `python -m app.provocar todos`.
 
 ## Estructura
 
@@ -211,7 +247,12 @@ También cubren la comparación calculada a mano, la separación entre replay y 
 │   │   ├── replay.py       # modo replay sobre velas históricas
 │   │   ├── comparacion.py  # comparación del protocolo
 │   │   ├── validar.py      # validación del MLP con datos de MEXC
+│   │   ├── diagnostico.py  # evidencia del LLM local (hardware, versión, latencia)
+│   │   ├── provocar.py     # los 9 errores provocados con evidencia
+│   │   ├── informe.py      # informe con cifras reales
+│   │   ├── evidencia.py    # corre toda la evidencia en orden
 │   │   ├── mexc.py         # datos públicos de MEXC
+│   │   ├── mexc_cuenta.py  # cuenta spot: saldo y órdenes de prueba firmadas
 │   │   ├── modelo.py       # variables y MLP (NumPy)
 │   │   ├── llm.py          # Ollama local + validación de la propuesta
 │   │   ├── paper.py        # simulador Paper y riesgo
@@ -221,8 +262,8 @@ También cubren la comparación calculada a mano, la separación entre replay y 
 │   └── requirements.txt
 ├── frontend/               # Vue 3 + Vite + TypeScript
 ├── models/                 # modelo_mlp.json versionado
-├── scripts/                # exportación del modelo desde Colab
-├── docs/                   # capturas, comparación y validación generadas
+├── scripts/                # instalar, iniciar y evidencia (Windows y Mac/Linux) + exportación desde Colab
+├── docs/                   # guía de ejecución, evidencia generada e informe
 ├── .env.example
 ├── CHANGELOG.md
 └── LICENSE
@@ -238,8 +279,8 @@ También cubren la comparación calculada a mano, la separación entre replay y 
 ## Próximos pasos
 
 - [ ] Exportar el MLP del avance 2 desde Colab y versionar `models/modelo_mlp.json`.
-- [ ] Correr el replay y la validación con datos reales de MEXC y subir los `.md` generados en `docs/`.
-- [ ] Documentar los 9 errores provocados con capturas del panel.
+- [ ] Correr `scripts\windows\3_evidencia.ps1` y subir la carpeta `docs/` generada.
+- [ ] Agregar capturas del panel en `docs/capturas/` y escribir las conclusiones del informe.
 - [ ] Agregar un proxy con autenticación delante de Ollama.
 
 ## Autora

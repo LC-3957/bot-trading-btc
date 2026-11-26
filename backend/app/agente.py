@@ -23,10 +23,11 @@ ESTADOS = ("DETENIDO", "CORRIENDO", "PAUSADO")
 
 class Agente:
     def __init__(self, cfg, bd: BD, mercado: ClienteMEXC, llm: ClienteOllama, predictor: Predictor,
-                 reloj_ms: Callable[[], int] = lambda: int(time.time() * 1000), origen: str = "vivo"):
+                 reloj_ms: Callable[[], int] = lambda: int(time.time() * 1000), origen: str = "vivo", cuenta=None):
         self.cfg, self.bd, self.mercado, self.llm, self.predictor = cfg, bd, mercado, llm, predictor
         self.reloj_ms = reloj_ms
         self.origen = origen                                 # "vivo" o "replay": separa la evidencia en la BD
+        self.cuenta = cuenta                                 # ClienteCuentaMEXC opcional (órdenes de prueba en MEXC)
         self.estado = "DETENIDO"
         self._hilo: threading.Thread | None = None
         self._parar = threading.Event()
@@ -105,6 +106,7 @@ class Agente:
             self.bd.error("modelo", e, self.origen)
             return {"resultado": "error de modelo", "error": str(e)}
 
+        prueba_mexc = None
         c = copy.deepcopy(self.cartera)                      # se confirma solo si la decisión se registra
         if c.dia != fecha:
             c.dia, c.patrimonio_inicio_dia = fecha, c.patrimonio(ultima.close)
@@ -143,13 +145,29 @@ class Agente:
 
         self.cartera = c
         if res.accion_final in ("COMPRAR", "VENDER"):
-            self.bd.guardar_orden(did, fecha, res.accion_final, res.precio, res.cantidad, res.costo, self.origen)
+            oid = self.bd.guardar_orden(did, fecha, res.accion_final, res.precio, res.cantidad, res.costo, self.origen)
+            if self.cuenta is not None and self.origen == "vivo":
+                prueba_mexc = self._probar_en_mexc(oid, res)
         self.bd.guardar_estado(f"cartera_{self.origen}", self.cartera.dict())
         self.bd.guardar_patrimonio(fecha, c.efectivo, c.cantidad, precio_exec, self.origen)
         self.ultimo = dict(creado=ahora(), fecha_vela=fecha, precio_ejecucion=precio_exec, contexto=contexto,
                            propuesta=propuesta, justificacion=just, latencia_s=lat, accion_final=res.accion_final,
-                           aprobada=res.aprobada, motivo=res.motivo)
+                           aprobada=res.aprobada, motivo=res.motivo, mexc_prueba=prueba_mexc)
         return {"resultado": "decision registrada", **self.ultimo}
+
+    def _probar_en_mexc(self, orden_id: int, res: Resultado) -> str:
+        """Envía la orden del simulador al endpoint de prueba de MEXC y guarda si la aceptó."""
+        from .mexc_cuenta import CuentaError
+        monto = self.cfg.mexc_monto_prueba or (res.cantidad * res.precio)
+        try:
+            p = self.cuenta.orden_prueba(self.cfg.simbolo, res.accion_final, res.cantidad, monto,
+                                         self.reglas().precision_cantidad)
+            texto = f"aceptada por MEXC (prueba): {p['side']} {p.get('quoteOrderQty', p.get('quantity'))}"
+        except (CuentaError, ValueError) as e:
+            texto = f"rechazada por MEXC: {e}"
+            self.bd.error("mexc_prueba", e, self.origen)
+        self.bd.marcar_prueba_mexc(orden_id, texto)
+        return texto
 
     # ---------- lectura ----------
     def resumen(self) -> dict:

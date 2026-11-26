@@ -45,7 +45,10 @@ class Config:
     ollama_modelo: str = field(default_factory=lambda: os.getenv("OLLAMA_MODELO", "qwen2.5:7b"))
     ollama_timeout_s: float = field(default_factory=lambda: _f("OLLAMA_TIMEOUT_S", "120"))
 
-    api_key: str = field(default_factory=lambda: os.getenv("BOT_API_KEY", ""))
+    api_key: str = field(default_factory=lambda: os.getenv("BOT_API_KEY", ""), repr=False)
+    mexc_api_key: str = field(default_factory=lambda: os.getenv("MEXC_API_KEY", "").strip(), repr=False)
+    mexc_api_secret: str = field(default_factory=lambda: os.getenv("MEXC_API_SECRET", "").strip(), repr=False)
+    mexc_monto_prueba: float = field(default_factory=lambda: _f("MEXC_MONTO_PRUEBA_USDT", "0"))
     db_path: str = field(default_factory=lambda: _ruta("DB_PATH", "data/bot_v2.sqlite"))
     modelo_path: str = field(default_factory=lambda: _ruta("MODELO_PATH", "models/modelo_mlp.json"))
 

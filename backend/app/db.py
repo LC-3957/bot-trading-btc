@@ -60,6 +60,9 @@ class BD:
         self._lock = threading.Lock()
         with self._lock:
             self._con.executescript(ESQUEMA)
+            columnas = {r[1] for r in self._con.execute("PRAGMA table_info(ordenes)")}
+            if "mexc_prueba" not in columnas:                # migración: bases creadas antes de v0.3
+                self._con.execute("ALTER TABLE ordenes ADD COLUMN mexc_prueba TEXT")
 
     def _ex(self, sql: str, params: tuple = ()) -> sqlite3.Cursor:
         with self._lock, self._con:
@@ -93,9 +96,13 @@ class BD:
         return cur.lastrowid
 
     def guardar_orden(self, decision_id: int, fecha_vela: str, accion: str, precio: float, cantidad: float,
-                      costo: float, origen: str = "vivo") -> None:
-        self._ex("INSERT INTO ordenes (origen, decision_id, fecha_vela, creado, accion, precio, cantidad, costo) "
-                 "VALUES (?,?,?,?,?,?,?,?)", (origen, decision_id, fecha_vela, ahora(), accion, precio, cantidad, costo))
+                      costo: float, origen: str = "vivo") -> int:
+        cur = self._ex("INSERT INTO ordenes (origen, decision_id, fecha_vela, creado, accion, precio, cantidad, costo) "
+                       "VALUES (?,?,?,?,?,?,?,?)", (origen, decision_id, fecha_vela, ahora(), accion, precio, cantidad, costo))
+        return cur.lastrowid
+
+    def marcar_prueba_mexc(self, orden_id: int, resultado: str) -> None:
+        self._ex("UPDATE ordenes SET mexc_prueba=? WHERE id=?", (resultado[:300], orden_id))
 
     def guardar_patrimonio(self, fecha_vela: str, efectivo: float, cantidad: float, precio: float,
                            origen: str = "vivo") -> None:

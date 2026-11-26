@@ -5,7 +5,7 @@ export interface Cartera { efectivo: number; cantidad: number; precio_entrada: n
 export interface Ultimo {
   creado: string; fecha_vela: string; precio_ejecucion: number
   contexto: { pronostico: number; dist_sma20: number; vol20: number; rend_ultimo: number; cierre: number }
-  propuesta: string | null; justificacion: string | null; latencia_s: number | null
+  propuesta: string | null; justificacion: string | null; latencia_s: number | null; mexc_prueba?: string | null
   accion_final: string; aprobada: boolean; motivo: string
 }
 export interface Estado {
@@ -37,6 +37,10 @@ export interface Comparacion {
 export interface VelaG { fecha: string; open: number; high: number; low: number; close: number }
 export interface OrdenG { id: number; fecha_vela: string; accion: 'COMPRAR' | 'VENDER'; precio: number; cantidad: number }
 export interface Grafica { velas: VelaG[]; ordenes: OrdenG[] }
+export interface CuentaMEXC {
+  configurada: boolean; conectada: boolean; clave?: string; detalle: string
+  puede_operar?: boolean; permisos?: string[]; saldos?: { activo: string; libre: number; bloqueado: number }[]
+}
 
 const CLAVE = 'bot_api_key'
 
@@ -80,6 +84,7 @@ export const api = {
   errores: (k: string, o: Origen) => pedir<ErrorBot[]>(`/errores?n=10&origen=${o}`, k),
   metricas: (k: string, o: Origen) => pedir<Metricas>(`/metricas?origen=${o}`, k),
   comparacion: (k: string, o: Origen) => pedir<Comparacion>(`/comparacion?origen=${o}`, k),
+  mexc: (k: string) => pedir<CuentaMEXC>('/mexc', k),
   grafica: (k: string, o: Origen) => pedir<Grafica>(`/grafica?origen=${o}&n=120`, k),
   control: (k: string, accion: 'iniciar' | 'pausar' | 'detener') => pedir<{ estado: string }>(`/control/${accion}`, k, 'POST'),
   ciclo: (k: string) => pedir<Record<string, unknown>>('/ciclo', k, 'POST'),

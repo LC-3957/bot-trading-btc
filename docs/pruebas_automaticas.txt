@@ -1,0 +1,64 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-8.4.2, pluggy-1.7.0 -- C:\Users\LC\Downloads\bot-trading-btc-v0.3.0\bot-trading-btc\backend\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\LC\Downloads\bot-trading-btc-v0.3.0\bot-trading-btc\backend
+plugins: anyio-4.16.0
+collecting ... collected 49 items
+
+tests/test_bot.py::test_rechaza_modo_real PASSED                         [  2%]
+tests/test_bot.py::test_rechaza_ollama_remoto PASSED                     [  4%]
+tests/test_bot.py::test_rechaza_clave_corta PASSED                       [  6%]
+tests/test_bot.py::test_mexc_limite_de_solicitudes PASSED                [  8%]
+tests/test_bot.py::test_mexc_sin_respuesta PASSED                        [ 10%]
+tests/test_bot.py::test_dato_atrasado PASSED                             [ 12%]
+tests/test_bot.py::test_separa_vela_en_curso PASSED                      [ 14%]
+tests/test_bot.py::test_json_invalido PASSED                             [ 16%]
+tests/test_bot.py::test_propuesta_de_otra_vela PASSED                    [ 18%]
+tests/test_bot.py::test_accion_fuera_de_catalogo PASSED                  [ 20%]
+tests/test_bot.py::test_prompt_sin_secretos PASSED                       [ 22%]
+tests/test_bot.py::test_compra_y_venta PASSED                            [ 24%]
+tests/test_bot.py::test_sin_cortos_ni_doble_compra PASSED                [ 26%]
+tests/test_bot.py::test_saldo_insuficiente PASSED                        [ 28%]
+tests/test_bot.py::test_perdida_diaria_bloquea_compras PASSED            [ 30%]
+tests/test_bot.py::test_ciclo_compra_y_no_duplica PASSED                 [ 32%]
+tests/test_bot.py::test_ollama_detenido_mantiene PASSED                  [ 34%]
+tests/test_bot.py::test_json_invalido_en_ciclo PASSED                    [ 36%]
+tests/test_bot.py::test_reinicio_recupera_estado PASSED                  [ 38%]
+tests/test_bot.py::test_detener_para_el_hilo PASSED                      [ 40%]
+tests/test_bot.py::test_predictor_numpy PASSED                           [ 42%]
+tests/test_bot.py::test_variables_orden_rezagos PASSED                   [ 44%]
+tests/test_bot.py::test_api_clave PASSED                                 [ 46%]
+tests/test_evidencia.py::test_diagnostico_registra_hardware_y_llm PASSED [ 48%]
+tests/test_evidencia.py::test_diagnostico_con_ollama_apagado PASSED      [ 51%]
+tests/test_evidencia.py::test_informe_con_replay PASSED                  [ 53%]
+tests/test_evidencia.py::test_informe_sin_datos PASSED                   [ 55%]
+tests/test_evidencia.py::test_provocar_los_nueve_errores PASSED          [ 57%]
+tests/test_mexc_cuenta.py::test_firma_hmac_y_cabecera PASSED             [ 59%]
+tests/test_mexc_cuenta.py::test_lee_saldos_y_permisos PASSED             [ 61%]
+tests/test_mexc_cuenta.py::test_orden_de_prueba_compra_y_venta PASSED    [ 63%]
+tests/test_mexc_cuenta.py::test_error_de_mexc_se_reporta PASSED          [ 65%]
+tests/test_mexc_cuenta.py::test_el_codigo_no_tiene_ordenes_reales PASSED [ 67%]
+tests/test_mexc_cuenta.py::test_agente_envia_orden_de_prueba_y_la_registra PASSED [ 69%]
+tests/test_mexc_cuenta.py::test_rechazo_de_mexc_no_rompe_el_simulador PASSED [ 71%]
+tests/test_mexc_cuenta.py::test_secretos_de_mexc_no_llegan_al_llm PASSED [ 73%]
+tests/test_mexc_cuenta.py::test_endpoint_mexc_enmascara_la_clave PASSED  [ 75%]
+tests/test_mexc_cuenta.py::test_config_no_muestra_secretos PASSED        [ 77%]
+tests/test_mexc_cuenta.py::test_corrige_el_reloj_desfasado_de_la_compu PASSED [ 79%]
+tests/test_mexc_cuenta.py::test_reintenta_si_mexc_rechaza_por_recvwindow PASSED [ 81%]
+tests/test_v02.py::test_comprar_y_mantener_a_mano PASSED                 [ 83%]
+tests/test_v02.py::test_modelo_sin_llm_sigue_el_pronostico PASSED        [ 85%]
+tests/test_v02.py::test_agente_sigue_acciones_finales_y_reporta_rechazos PASSED [ 87%]
+tests/test_v02.py::test_comparacion_sin_ciclos PASSED                    [ 89%]
+tests/test_v02.py::test_replay_marca_origen_y_no_toca_vivo PASSED        [ 91%]
+tests/test_v02.py::test_replay_se_puede_repetir PASSED                   [ 93%]
+tests/test_v02.py::test_metricas_y_exportacion PASSED                    [ 95%]
+tests/test_v02.py::test_endpoints_v02 PASSED                             [ 97%]
+tests/test_v02.py::test_validacion_con_mexc PASSED                       [100%]
+
+============================== warnings summary ===============================
+.venv\Lib\site-packages\starlette\testclient.py:45
+  C:\Users\LC\Downloads\bot-trading-btc-v0.3.0\bot-trading-btc\backend\.venv\Lib\site-packages\starlette\testclient.py:45: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 49 passed, 1 warning in 11.60s ========================

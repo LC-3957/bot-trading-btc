@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { api, ApiError, descargarCsv, guardarClave, leerClave, type Comparacion, type Decision, type ErrorBot,
-  type Estado, type Grafica, type Metricas, type Origen } from './api'
+  type CuentaMEXC, type Estado, type Grafica, type Metricas, type Origen } from './api'
 import GraficaPrecio from './components/GraficaPrecio.vue'
 import PanelMetricas from './components/PanelMetricas.vue'
 import TablaComparacion from './components/TablaComparacion.vue'
+import TarjetaMEXC from './components/TarjetaMEXC.vue'
 
 const clave = ref(leerClave())
 const claveInput = ref('')
@@ -15,6 +16,13 @@ const origen = ref<Origen>('vivo')
 const metricas = ref<Metricas | null>(null)
 const comparacion = ref<Comparacion | null>(null)
 const grafica = ref<Grafica | null>(null)
+const cuentaMexc = ref<CuentaMEXC | null>(null)
+let timerMexc: number | undefined
+
+async function refrescarMexc() {
+  if (!clave.value) return
+  try { cuentaMexc.value = await api.mexc(clave.value) } catch { /* el aviso general ya muestra fallas del backend */ }
+}
 const aviso = ref('')
 const ocupado = ref(false)
 let timer: number | undefined
@@ -44,7 +52,7 @@ async function refrescar() {
 
 function entrar() {
   clave.value = claveInput.value.trim(); guardarClave(clave.value); claveInput.value = ''
-  aviso.value = ''; refrescar()
+  aviso.value = ''; refrescar(); refrescarMexc()
 }
 
 async function control(accion: 'iniciar' | 'pausar' | 'detener') {
@@ -67,14 +75,18 @@ async function exportar(tabla: string) {
   try { await descargarCsv(clave.value, tabla, origen.value) } catch (err) { aviso.value = (err as Error).message }
 }
 
-onMounted(() => { refrescar(); timer = window.setInterval(refrescar, 5000) })
-onUnmounted(() => window.clearInterval(timer))
+onMounted(() => {
+  refrescar(); refrescarMexc()
+  timer = window.setInterval(refrescar, 5000)
+  timerMexc = window.setInterval(refrescarMexc, 60000)          // la cuenta se consulta cada minuto
+})
+onUnmounted(() => { window.clearInterval(timer); window.clearInterval(timerMexc) })
 </script>
 
 <template>
   <main>
     <div class="barra">
-      <h1>Bot de trading {{ estado?.simbolo ?? 'BTCUSDT' }} <small class="num">v{{ estado?.version ?? '0.2.0' }}</small></h1>
+      <h1>Bot de trading {{ estado?.simbolo ?? 'BTCUSDT' }} <small class="num">v{{ estado?.version ?? '0.3.0' }}</small></h1>
       <span v-if="estado" class="chip" :class="claseEstado">{{ estado.estado }}</span>
     </div>
 
@@ -132,6 +144,7 @@ onUnmounted(() => window.clearInterval(timer))
             <span class="num">exp. {{ pct(estado.riesgo.exposicion_max, 0) }} · pérdida/día {{ pct(estado.riesgo.perdida_diaria_max, 0) }}</span></div>
         </section>
       </div>
+      <div class="grid"><TarjetaMEXC :c="cuentaMexc" :ultima-prueba="estado?.ultimo?.mexc_prueba" /></div>
 
       <div class="panel barra" style="margin-top:14px">
         <span>Ver evidencia de:</span>

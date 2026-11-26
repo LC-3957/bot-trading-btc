@@ -22,15 +22,18 @@ from .config import Config, cargar
 from .db import BD, EXPORTABLES
 from .llm import ClienteOllama, OllamaError
 from .mexc import ClienteMEXC
+from .mexc_cuenta import ClienteCuentaMEXC, CuentaError
 from .modelo import cargar_predictor
 
 Origen = Literal["vivo", "replay"]
 
 
 def construir_agente(cfg: Config) -> Agente:
+    cuenta = (ClienteCuentaMEXC(cfg.mexc_url, cfg.mexc_api_key, cfg.mexc_api_secret)
+              if cfg.mexc_api_key and cfg.mexc_api_secret else None)
     return Agente(cfg, BD(cfg.db_path), ClienteMEXC(cfg.mexc_url),
                   ClienteOllama(cfg.ollama_url, cfg.ollama_modelo, cfg.ollama_timeout_s),
-                  cargar_predictor(cfg.modelo_path))
+                  cargar_predictor(cfg.modelo_path), cuenta=cuenta)
 
 
 def create_app(cfg: Config | None = None, agente: Agente | None = None) -> FastAPI:
@@ -77,6 +80,21 @@ def create_app(cfg: Config | None = None, agente: Agente | None = None) -> FastA
         except OllamaError as e:
             agente.bd.error("llm", e)
             raise HTTPException(status_code=503, detail=str(e))
+
+    @app.get("/api/mexc", dependencies=auth)
+    def mexc():
+        """Estado de la conexión con la cuenta spot de MEXC. Nunca devuelve la clave completa ni el secreto."""
+        c = agente.cuenta
+        if c is None:
+            return {"configurada": False, "conectada": False,
+                    "detalle": "Sin MEXC_API_KEY / MEXC_API_SECRET en .env: el bot opera solo con el simulador."}
+        try:
+            datos = c.cuenta()
+        except CuentaError as e:
+            agente.bd.error("mexc_cuenta", e)
+            return {"configurada": True, "conectada": False, "clave": c.clave_visible, "detalle": str(e)}
+        return {"configurada": True, "conectada": True, "clave": c.clave_visible, **datos,
+                "detalle": "Conectada. Las órdenes se envían a /api/v3/order/test: MEXC las valida y no las ejecuta."}
 
     @app.get("/api/decisiones", dependencies=auth)
     def decisiones(n: int = Query(30, ge=1, le=500), origen: Origen = "vivo"):
